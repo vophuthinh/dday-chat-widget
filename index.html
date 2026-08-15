@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPT DDay Chatbot — Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .bg-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+        }
+
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 700px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 999px;
+            padding: 6px 18px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero h1 {
+            font-size: clamp(32px, 6vw, 56px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .info-cards {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 18px 24px;
+            backdrop-filter: blur(10px);
+            text-align: left;
+            min-width: 160px;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .info-card .icon { font-size: 24px; margin-bottom: 8px; }
+        .info-card .label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .info-card .value { font-size: 15px; font-weight: 600; color: white; }
+
+        .arrow-hint {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(6px); }
+        }
+
+        .arrow-hint svg { width: 20px; height: 20px; }
+
+        .glow-hint {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(51,0,207,0.5) 0%, transparent 70%);
+            animation: glow-pulse 2s infinite;
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-particles" id="particles"></div>
+
+    <div class="hero">
+        <div class="badge">🎯 HPT DDay 2025 — Live Demo</div>
+        <h1>AI Chatbot<br>Trợ Lý Sự Kiện</h1>
+        <p>
+            Chatbot AI tích hợp n8n, sử dụng GPT-4o để hỗ trợ<br>
+            thông tin sự kiện HPT D-DAY 2025 theo thời gian thực.
+        </p>
+
+        <div class="info-cards">
+            <div class="info-card">
+                <div class="icon">📅</div>
+                <div class="label">Thời gian</div>
+                <div class="value">06/11/2025</div>
+            </div>
+            <div class="info-card">
+                <div class="icon">📍</div>
+                <div class="label">Địa điểm</div>
+                <div class="value">Pullman Hà Nội</div>
+            </div>
+            <div class="info-card">
+                <div class="icon">🤖</div>
+                <div class="label">Mô hình AI</div>
+                <div class="value">GPT-4o</div>
+            </div>
+            <div class="info-card">
+                <div class="icon">💬</div>
+                <div class="label">Powered by</div>
+                <div class="value">n8n + OpenAI</div>
+            </div>
+        </div>
+
+        <div class="arrow-hint">
+            <span>Nhấn nút "Explore more" góc dưới bên phải để bắt đầu</span>
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="glow-hint"></div>
+
+    <script>
+        window.ChatWidgetConfig = {
+            webhook: {
+                url: 'https://n8n.hpt.vn/webhook/a1823d18-55e8-4d04-aa26-bcc67845a822',
+                route: 'general',
+            },
+            branding: {
+                logo: 'https://hpt.vn/wp-content/uploads/2023/01/logo-hpt.png',
+                name: 'HPT Assistant',
+                welcomeText: '👋 Xin chào! Tôi là Trợ lý AI của HPT DDay 2025.\nBạn cần hỗ trợ gì hôm nay?',
+                responseTimeText: 'Phản hồi ngay lập tức',
+            },
+            style: {
+                primaryColor: '#3300cf',
+                secondaryColor: '#2600a4',
+                position: 'right',
+                backgroundColor: '#ffffff',
+                fontColor: '#1f2937',
+            },
+            suggestedQuestions: [
+                '📅 Sự kiện diễn ra khi nào và ở đâu?',
+                '🎤 Có bao nhiêu diễn giả tham gia?',
+                '🏢 Gian hàng nào tham gia triển lãm?',
+                '🔗 Link đăng ký tham dự ở đâu?',
+            ],
+        };
+    </script>
+
+    <script src="./script.js"></script>
+
+    <script>
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const el = document.createElement('div');
+            el.className = 'particle';
+            const size = Math.random() * 60 + 10;
+            el.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${Math.random() * 100}%;
+                animation-duration: ${Math.random() * 20 + 10}s;
+                animation-delay: ${Math.random() * -20}s;
+            `;
+            container.appendChild(el);
+        }
+    </script>
+
+</body>
+</html>
