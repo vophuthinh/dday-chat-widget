@@ -4,18 +4,12 @@
     if (window.N8nChatWidgetLoaded) return;
     window.N8nChatWidgetLoaded = true;
 
-    // Load font resource - using Poppins for a fresh look
-    const fontElement = document.createElement('link');
-    fontElement.rel = 'stylesheet';
-    fontElement.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap';
-    document.head.appendChild(fontElement);
-
     // Apply widget styles with completely different design approach
     const widgetStyles = document.createElement('style');
     widgetStyles.textContent = `
         .chat-assist-widget {
-            --chat-color-primary: var(--chat-widget-primary, #3300cf);
-            --chat-color-secondary: var(--chat-widget-secondary, #2600a4);
+            --chat-color-primary: var(--chat-widget-primary, #0073f7);
+            --chat-color-secondary: var(--chat-widget-secondary, #009c82);
             --chat-color-tertiary: var(--chat-widget-tertiary, #1e0079);
             --chat-color-light: var(--chat-widget-light, #e6d6ff);
             --chat-color-surface: var(--chat-widget-surface, #ffffff);
@@ -30,7 +24,14 @@
             --chat-radius-lg: 20px;
             --chat-radius-full: 9999px;
             --chat-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: 'Poppins', sans-serif;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                'Segoe UI',
+                Roboto,
+                Helvetica,
+                Arial,
+                sans-serif;
         }
 
         .chat-assist-widget .chat-window {
@@ -227,6 +228,29 @@
             border-bottom-left-radius: 4px;
             box-shadow: var(--chat-shadow-sm);
             border: 1px solid var(--chat-color-light);
+        }
+
+        .chat-assist-widget .msg-line {
+            margin: 2px 0;
+        }
+
+        .chat-assist-widget .msg-heading {
+            margin: 0 0 2px;
+            font-weight: 700;
+            color: var(--chat-color-primary);
+        }
+
+        .chat-assist-widget .msg-list {
+            margin: 2px 0;
+            padding-left: 20px;
+        }
+
+        .chat-assist-widget .msg-gap {
+            margin-top: 14px;
+        }
+
+        .chat-assist-widget .msg-list li {
+            margin: 2px 0;
         }
 
         /* Typing animation */
@@ -428,15 +452,27 @@
         }
 
         .chat-assist-widget .chat-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: 2px 0;
+            padding: 6px 12px;
+            background: var(--chat-color-light);
             color: var(--chat-color-primary);
-            text-decoration: underline;
-            word-break: break-all;
+            border-radius: var(--chat-radius-full);
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             transition: var(--chat-transition);
         }
 
         .chat-assist-widget .chat-link:hover {
-            color: var(--chat-color-secondary);
-            text-decoration: underline;
+            background: var(--chat-color-primary);
+            color: white;
         }
 
         .chat-assist-widget .user-registration {
@@ -535,6 +571,33 @@
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .chat-assist-widget .privacy-note {
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .chat-assist-widget .privacy-note a {
+            color: var(--chat-color-primary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 520px) {
+            .chat-assist-widget .chat-window {
+                width: auto;
+                left: 10px;
+                right: 10px;
+                bottom: 80px;
+                height: min(580px, calc(100vh - 100px));
+                max-height: calc(100vh - 100px);
+            }
+
+            .chat-assist-widget .chat-launcher-text {
+                display: none;
+            }
         }
     `;
     document.head.appendChild(widgetStyles);
@@ -661,7 +724,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
-        Start chatting
+        Bắt đầu trò chuyện
     `;
 
     const responseTime = document.createElement('p');
@@ -676,25 +739,26 @@
     const registrationDiv = document.createElement('div');
     registrationDiv.className = 'user-registration';
     registrationDiv.innerHTML = `
-        <h2 class="registration-title">Please enter your details to start chatting</h2>
+        <h2 class="registration-title">Vui lòng nhập thông tin để bắt đầu trò chuyện</h2>
         <form class="registration-form">
             <div class="form-field">
-                <label class="form-label" for="chat-user-name">Name</label>
-                <input type="text" id="chat-user-name" class="form-input" placeholder="Your name" 
-                       required maxlength="50" minlength="2" 
-                       title="Name can only contain letters, spaces, hyphens, and dots">
+                <label class="form-label" for="chat-user-name">Họ tên</label>
+                <input type="text" id="chat-user-name" class="form-input" placeholder="Họ tên của bạn"
+                       required maxlength="50" minlength="2"
+                       title="Tên chỉ được chứa chữ cái, khoảng trắng, dấu gạch ngang và dấu chấm">
                 <div class="error-text" id="name-error"></div>
             </div>
             <div class="form-field">
                 <label class="form-label" for="chat-user-email">Email</label>
-                <input type="email" id="chat-user-email" class="form-input" placeholder="Your email address" 
-                       required maxlength="100" minlength="5" 
-                       pattern="[a-zA-Z0-9][a-zA-Z0-9._#-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}"
-                       title="Please enter a valid email address">
+                <input type="email" id="chat-user-email" class="form-input" placeholder="Địa chỉ email của bạn"
+                       required maxlength="100" minlength="5"
+                       pattern="[a-zA-Z0-9][a-zA-Z0-9._#\-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.\-]*\.[a-zA-Z]{2,}"
+                       title="Vui lòng nhập địa chỉ email hợp lệ">
                 <div class="error-text" id="email-error"></div>
             </div>
-            <button type="submit" class="submit-registration">Continue to Chat</button>
+            <button type="submit" class="submit-registration">Tiếp tục trò chuyện</button>
         </form>
+        <p class="privacy-note">Bằng việc tiếp tục, bạn đồng ý với <a href="https://d-day.hpt.vn/wp-content/uploads/2026/07/HPT-D-DAY_Privacy-policy_Official.pdf" target="_blank" rel="noopener noreferrer">Chính sách quyền riêng tư</a> của chúng tôi.</p>
     `;
 
     // Create chat interface (safe static HTML)
@@ -704,9 +768,9 @@
         <div class="chat-messages"></div>
         <div class="chat-controls">
             <div class="chat-input-row">
-                <textarea class="chat-textarea" placeholder="Type your message here..." rows="1" 
-                         maxlength="500" 
-                         title="Maximum 500 characters. Please ask normal questions only."></textarea>
+                <textarea class="chat-textarea" placeholder="Nhập tin nhắn của bạn..." rows="1"
+                         maxlength="500"
+                         title="Tối đa 500 ký tự. Vui lòng chỉ đặt câu hỏi thông thường."></textarea>
                 <button class="chat-submit">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 2L11 13"></path>
@@ -808,11 +872,11 @@
 
         // Check length (1-500 characters)
         if (sanitized.length < 1) {
-            return { isValid: false, message: 'Message cannot be empty' };
+            return { isValid: false, message: 'Tin nhắn không được để trống' };
         }
 
         if (sanitized.length > 500) {
-            return { isValid: false, message: 'Message must be less than 500 characters' };
+            return { isValid: false, message: 'Tin nhắn phải ít hơn 500 ký tự' };
         }
 
         // Check for code-like patterns
@@ -845,7 +909,7 @@
             if (pattern.test(sanitized)) {
                 return {
                     isValid: false,
-                    message: 'Please ask normal questions only. Code or scripts are not allowed.',
+                    message: 'Vui lòng chỉ đặt câu hỏi thông thường. Không cho phép mã hoặc script.',
                 };
             }
         }
@@ -854,7 +918,7 @@
         const specialCharCount = (sanitized.match(/[^\p{L}\p{N}\s.,!?@:;()\-\/]/gu) || []).length;
         const totalLength = sanitized.length;
         if (specialCharCount > totalLength * 0.4) {
-            return { isValid: false, message: 'Too many special characters. Please use normal language.' };
+            return { isValid: false, message: 'Quá nhiều ký tự đặc biệt. Vui lòng dùng ngôn ngữ thông thường.' };
         }
 
         return { isValid: true, sanitized };
@@ -866,11 +930,11 @@
 
         // Check length (2-50 characters)
         if (sanitized.length < 2 || sanitized.length > 50) {
-            return { isValid: false, message: 'Name must be between 2 and 50 characters' };
+            return { isValid: false, message: 'Họ tên phải từ 2 đến 50 ký tự' };
         }
 
         if (!/^[\p{L}\s.()'-]+$/u.test(sanitized)) {
-            return { isValid: false, message: 'Name can only contain letters, spaces, hyphens, dots, and parentheses' };
+            return { isValid: false, message: 'Họ tên chỉ được chứa chữ cái, khoảng trắng, dấu gạch ngang, dấu chấm và dấu ngoặc đơn' };
         }
 
         return { isValid: true, sanitized };
@@ -882,13 +946,13 @@
 
         // Check length (5-100 characters)
         if (sanitized.length < 5 || sanitized.length > 100) {
-            return { isValid: false, message: 'Email must be between 5 and 100 characters' };
+            return { isValid: false, message: 'Email phải từ 5 đến 100 ký tự' };
         }
 
         // Strict email validation - allow # for email aliases
         const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._#-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(sanitized)) {
-            return { isValid: false, message: 'Please enter a valid email address' };
+            return { isValid: false, message: 'Vui lòng nhập địa chỉ email hợp lệ' };
         }
 
         return { isValid: true, sanitized };
@@ -958,10 +1022,9 @@
         return true;
     }
 
-    function linkifyText(text) {
-        // First, HTML encode the entire text to prevent XSS
-        const encodedText = htmlEncode(text);
-
+    // Turns URLs into short domain-label pills. Operates on text that is ALREADY
+    // HTML-encoded (never call this with raw/unescaped text).
+    function linkifyEncoded(encodedText) {
         // More restrictive URL pattern - only http/https with strict domain format
         // Only matches proper URLs with domain names (requires at least one dot)
         const urlPattern =
@@ -982,14 +1045,72 @@
 
             // Only create link if it starts with http/https
             if (startsWithHttp && match.length < 500) {
-                // Use the already-encoded URL directly for both href and display
-                // No decoding = no opportunity for encoding bypass
-                return `<a href="${match}" target="_blank" rel="noopener noreferrer" class="chat-link">${match}</a>`;
+                // Use the already-encoded URL for href, but show a short "domain" label
+                // instead of the raw URL so long links don't clutter the chat bubble.
+                // match is already HTML-encoded, so slicing it is still safe to reinsert.
+                const hostMatch = match.match(/^https?:\/\/([^\/?#]+)/i);
+                const label = hostMatch ? `🔗 ${hostMatch[1]}` : '🔗 Mở liên kết';
+                return `<a href="${match}" target="_blank" rel="noopener noreferrer" class="chat-link">${label}</a>`;
             } else {
                 // Return as plain encoded text if invalid or too long
                 return match;
             }
         });
+    }
+
+    // Encodes one already-sanitized line, turns **bold** into <strong>, then linkifies.
+    function formatInlineLine(line) {
+        const encoded = htmlEncode(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return linkifyEncoded(encoded);
+    }
+
+    // Renders bot text as spaced paragraphs/bullet lists instead of one flat blob,
+    // so long structured answers (agendas, speaker lists, ...) stay readable. Bot
+    // text has no reliable markup for "this line is a heading", so this only acts
+    // on signals that ARE reliable: blank lines (paragraph breaks) and "* "/"- "
+    // bullets - it doesn't try to guess semantic headings from letter casing.
+    function formatBotText(text) {
+        const lines = String(text).split('\n');
+        let html = '';
+        let inList = false;
+        let newParagraph = false;
+        const closeList = () => {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+        };
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (line === '') {
+                closeList();
+                newParagraph = true;
+                continue;
+            }
+
+            const bulletMatch = line.match(/^[*-]\s+(.*)$/);
+            if (bulletMatch) {
+                if (!inList) {
+                    html += `<ul class="msg-list${newParagraph ? ' msg-gap' : ''}">`;
+                    inList = true;
+                    newParagraph = false;
+                }
+                html += `<li>${formatInlineLine(bulletMatch[1])}</li>`;
+                continue;
+            }
+
+            closeList();
+            // The first line of a new paragraph (after a blank line) reads as a section
+            // title far more reliably than letter-casing does - as long as it's short,
+            // so a long topic sentence starting a new paragraph doesn't get bolded whole.
+            const isTitleLike = newParagraph && line.length <= 100;
+            const cssClass = isTitleLike ? 'msg-heading msg-gap' : `msg-line${newParagraph ? ' msg-gap' : ''}`;
+            newParagraph = false;
+            html += `<div class="${cssClass}">${formatInlineLine(line)}</div>`;
+        }
+        closeList();
+        return html;
     }
 
     // Safe function to set bot message content with comprehensive XSS protection
@@ -1037,14 +1158,14 @@
         for (const pattern of suspiciousPatterns) {
             if (pattern.test(sanitizedText)) {
                 // If suspicious content detected, return safe fallback message
-                messageElement.textContent = '⚠️ Response contains unsafe content and has been blocked for security.';
+                messageElement.textContent = '⚠️ Phản hồi chứa nội dung không an toàn và đã bị chặn vì lý do bảo mật.';
                 messageElement.style.color = '#ef4444';
                 return;
             }
         }
 
-        // Use linkifyText which now has secure URL handling and HTML encoding
-        messageElement.innerHTML = linkifyText(sanitizedText);
+        // Render as headings/paragraphs/bullets instead of one flat blob of text
+        messageElement.innerHTML = formatBotText(sanitizedText);
     }
 
     // Show registration form
@@ -1055,7 +1176,7 @@
 
     // POST a payload to the configured webhook with a timeout so a hung n8n instance
     // doesn't leave the user staring at the typing indicator forever
-    async function postToWebhook(payload, timeoutMs = 20000) {
+    async function postToWebhook(payload, timeoutMs = 45000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -1069,6 +1190,42 @@
         } finally {
             clearTimeout(timeoutId);
         }
+    }
+
+    // The webhook's `output` field is either a plain string (legacy) or a structured
+    // { answer, suggestedQuestions } object produced by the n8n Structured Output Parser
+    function extractBotReply(responseData) {
+        const raw = Array.isArray(responseData) ? responseData[0]?.output : responseData?.output;
+        if (raw && typeof raw === 'object') {
+            return {
+                text: raw.answer || '',
+                suggestedQuestions: Array.isArray(raw.suggestedQuestions) ? raw.suggestedQuestions : [],
+            };
+        }
+        return { text: raw || '', suggestedQuestions: [] };
+    }
+
+    // Render a row of clickable follow-up question buttons; clicking one submits it and clears the row
+    function renderSuggestedQuestions(questions) {
+        if (!Array.isArray(questions) || questions.length === 0) return;
+
+        const suggestedQuestionsContainer = document.createElement('div');
+        suggestedQuestionsContainer.className = 'suggested-questions';
+
+        questions.forEach((question) => {
+            const questionButton = document.createElement('button');
+            questionButton.className = 'suggested-question-btn';
+            questionButton.textContent = question;
+            questionButton.addEventListener('click', () => {
+                submitMessage(question);
+                if (suggestedQuestionsContainer.parentNode) {
+                    suggestedQuestionsContainer.parentNode.removeChild(suggestedQuestionsContainer);
+                }
+            });
+            suggestedQuestionsContainer.appendChild(questionButton);
+        });
+
+        messagesContainer.appendChild(suggestedQuestionsContainer);
     }
 
     // Add a message bubble to the chat and persist it so a page reload doesn't lose the conversation
@@ -1170,36 +1327,17 @@
             messagesContainer.removeChild(typingIndicator);
 
             // Display initial bot message with clickable links
-            const messageText = Array.isArray(userInfoResponseData)
-                ? userInfoResponseData[0]?.output
-                : userInfoResponseData?.output;
+            const { text: messageText, suggestedQuestions: aiSuggestions } = extractBotReply(userInfoResponseData);
             addChatBubble(messageText || 'Xin lỗi, tôi chưa nhận được phản hồi hợp lệ. Vui lòng thử lại.', 'bot');
 
-            // Add sample questions if configured
-            if (
-                settings.suggestedQuestions &&
-                Array.isArray(settings.suggestedQuestions) &&
-                settings.suggestedQuestions.length > 0
-            ) {
-                const suggestedQuestionsContainer = document.createElement('div');
-                suggestedQuestionsContainer.className = 'suggested-questions';
-
-                settings.suggestedQuestions.forEach((question) => {
-                    const questionButton = document.createElement('button');
-                    questionButton.className = 'suggested-question-btn';
-                    questionButton.textContent = question;
-                    questionButton.addEventListener('click', () => {
-                        submitMessage(question);
-                        // Remove the suggestions after clicking
-                        if (suggestedQuestionsContainer.parentNode) {
-                            suggestedQuestionsContainer.parentNode.removeChild(suggestedQuestionsContainer);
-                        }
-                    });
-                    suggestedQuestionsContainer.appendChild(questionButton);
-                });
-
-                messagesContainer.appendChild(suggestedQuestionsContainer);
-            }
+            // Prefer AI-generated follow-ups; fall back to the configured starter questions
+            const initialSuggestions =
+                aiSuggestions.length > 0
+                    ? aiSuggestions
+                    : Array.isArray(settings.suggestedQuestions)
+                      ? settings.suggestedQuestions
+                      : [];
+            renderSuggestedQuestions(initialSuggestions);
 
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         } catch (error) {
@@ -1214,7 +1352,7 @@
             // Show error message
             const errorMessage = document.createElement('div');
             errorMessage.className = 'chat-bubble bot-bubble';
-            errorMessage.textContent = "Sorry, I couldn't connect to the server. Please try again later.";
+            errorMessage.textContent = 'Xin lỗi, tôi không thể kết nối tới máy chủ. Vui lòng thử lại sau.';
             messagesContainer.appendChild(errorMessage);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -1279,8 +1417,9 @@
             messagesContainer.removeChild(typingIndicator);
 
             // Display bot response with clickable links
-            const responseText = Array.isArray(responseData) ? responseData[0]?.output : responseData?.output;
+            const { text: responseText, suggestedQuestions } = extractBotReply(responseData);
             addChatBubble(responseText || 'Xin lỗi, tôi chưa nhận được phản hồi hợp lệ. Vui lòng thử lại.', 'bot');
+            renderSuggestedQuestions(suggestedQuestions);
 
             // Scroll to bottom after adding message
             setTimeout(() => {
@@ -1295,7 +1434,7 @@
             // Show error message
             const errorMessage = document.createElement('div');
             errorMessage.className = 'chat-bubble bot-bubble';
-            errorMessage.textContent = "Sorry, I couldn't send your message. Please try again.";
+            errorMessage.textContent = 'Xin lỗi, tôi không thể gửi tin nhắn của bạn. Vui lòng thử lại.';
             messagesContainer.appendChild(errorMessage);
 
             // Scroll to bottom
