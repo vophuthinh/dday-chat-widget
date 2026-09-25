@@ -620,6 +620,7 @@
         webhook: {
             url: '',
             route: 'general',
+            headers: {},
         },
         branding: {
             logo: '',
@@ -1196,7 +1197,7 @@
         try {
             const response = await fetch(settings.webhook.url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(settings.webhook.headers || {}) },
                 body: JSON.stringify(payload),
                 signal: controller.signal,
             });
