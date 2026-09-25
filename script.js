@@ -18,7 +18,7 @@
             --chat-color-border: var(--chat-widget-border, #e5e7eb);
             --chat-shadow-sm: 0 1px 3px rgba(51, 0, 207, 0.1);
             --chat-shadow-md: 0 4px 6px rgba(51, 0, 207, 0.15);
-            --chat-shadow-lg: 0 10px 15px rgba(51, 0, 207, 0.2);
+            --chat-shadow-lg: 0 10px 15px rgba(0, 115, 247, 0.2);
             --chat-radius-sm: 8px;
             --chat-radius-md: 12px;
             --chat-radius-lg: 20px;
@@ -362,7 +362,7 @@
         .chat-assist-widget .chat-textarea:focus {
             outline: none;
             border-color: var(--chat-color-primary);
-            box-shadow: 0 0 0 3px rgba(51, 0, 207, 0.2);
+            box-shadow: 0 0 0 3px rgba(0, 115, 247, 0.2);
         }
 
         .chat-assist-widget .chat-textarea::placeholder {
@@ -545,7 +545,7 @@
         .chat-assist-widget .form-input:focus {
             outline: none;
             border-color: var(--chat-color-primary);
-            box-shadow: 0 0 0 3px rgba(51, 0, 207, 0.2);
+            box-shadow: 0 0 0 3px rgba(0, 115, 247, 0.2);
         }
 
         .chat-assist-widget .form-input.error {
