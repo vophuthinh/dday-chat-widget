@@ -376,6 +376,7 @@
             background: var(--chat-color-surface);
             color: var(--chat-color-text);
             resize: none;
+            overflow-y: hidden; /* avoids a stray scrollbar strip when content fits; JS switches to auto past max-height */
             font-family: inherit;
             font-size: 14px;
             line-height: 1.5;
@@ -1498,6 +1499,7 @@
     function autoResizeTextarea() {
         messageTextarea.style.height = 'auto';
         messageTextarea.style.height = (messageTextarea.scrollHeight > 120 ? 120 : messageTextarea.scrollHeight) + 'px';
+        messageTextarea.style.overflowY = messageTextarea.scrollHeight > 120 ? 'auto' : 'hidden';
 
         // Update character counter
         const currentLength = messageTextarea.value.length;
