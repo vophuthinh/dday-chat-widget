@@ -241,8 +241,9 @@
         }
 
         .chat-assist-widget .msg-list {
-            margin: 2px 0;
+            margin: 4px 0;
             padding-left: 20px;
+            list-style: disc outside;
         }
 
         .chat-assist-widget .msg-gap {
@@ -250,7 +251,20 @@
         }
 
         .chat-assist-widget .msg-list li {
-            margin: 2px 0;
+            display: list-item;
+            list-style: disc outside;
+            margin: 4px 0;
+            line-height: 1.5;
+        }
+
+        .chat-assist-widget .msg-list li::marker {
+            color: var(--chat-color-primary);
+        }
+
+        .chat-assist-widget .msg-line strong,
+        .chat-assist-widget .msg-list strong {
+            font-weight: 700;
+            color: var(--chat-color-tertiary);
         }
 
         /* Typing animation */
