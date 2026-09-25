@@ -112,6 +112,31 @@
             height: 28px;
         }
 
+        .chat-assist-widget .chat-new-btn {
+            position: absolute;
+            right: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: var(--chat-transition);
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: var(--chat-radius-full);
+            height: 28px;
+            padding: 0 12px;
+            white-space: nowrap;
+        }
+
+        .chat-assist-widget .chat-new-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .chat-assist-widget .chat-close-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-50%) scale(1.1);
@@ -723,6 +748,12 @@
 
     chatHeader.appendChild(headerLogo);
     chatHeader.appendChild(headerTitle);
+    const newChatBtn = document.createElement('button');
+    newChatBtn.className = 'chat-new-btn';
+    newChatBtn.type = 'button';
+    newChatBtn.textContent = 'Cuộc trò chuyện mới';
+
+    chatHeader.appendChild(newChatBtn);
     chatHeader.appendChild(closeBtn);
 
     // Create welcome section with safe DOM manipulation
@@ -838,6 +869,7 @@
     if (storedSession && storedSession.conversationId && sessionUser.email) {
         chatWelcome.style.display = 'none';
         chatBody.classList.add('active');
+        newChatBtn.style.display = 'flex';
         sessionMessages.forEach((msg) => {
             const bubble = document.createElement('div');
             bubble.className = `chat-bubble ${msg.sender}-bubble`;
@@ -1312,6 +1344,7 @@
             // Hide registration form, show chat interface
             userRegistration.classList.remove('active');
             chatBody.classList.add('active');
+            newChatBtn.style.display = 'flex';
 
             // Show typing indicator
             const typingIndicator = createTypingIndicator();
@@ -1511,6 +1544,24 @@
 
     launchButton.addEventListener('click', () => {
         chatWindow.classList.toggle('visible');
+    });
+
+    // Start over: wipe the stored conversation and return to the welcome screen
+    newChatBtn.addEventListener('click', () => {
+        try {
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        } catch (error) {
+            // Ignore storage errors
+        }
+        conversationId = '';
+        sessionUser = { name: '', email: '' };
+        sessionMessages = [];
+        isWaitingForResponse = false;
+        messagesContainer.innerHTML = '';
+        chatBody.classList.remove('active');
+        userRegistration.classList.remove('active');
+        chatWelcome.style.display = '';
+        newChatBtn.style.display = 'none';
     });
 
     // Close button functionality
