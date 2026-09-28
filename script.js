@@ -907,10 +907,11 @@
     }
 
     function sanitizeChatMessage(input) {
-        // More restrictive sanitization for chat messages but support Vietnamese and URLs (keeps '/')
+        // More restrictive sanitization for chat messages but support Vietnamese and URLs
+        // (keeps '/', '&', '=', '%', '_', '#' so a pasted URL with a query string survives)
         return input
-            .replace(/[<>\"'&{}[\]\\]/g, '')
-            .replace(/[^\p{L}\p{N}\s.,!?@.:;()\-\/]/gu, '')
+            .replace(/[<>\"'{}[\]\\]/g, '')
+            .replace(/[^\p{L}\p{N}\s.,!?@.:;()\-\/&=%_#]/gu, '')
             .trim();
     }
 
@@ -963,7 +964,7 @@
         }
 
         // Check for excessive special characters (potential obfuscation) - more lenient for Vietnamese
-        const specialCharCount = (sanitized.match(/[^\p{L}\p{N}\s.,!?@:;()\-\/]/gu) || []).length;
+        const specialCharCount = (sanitized.match(/[^\p{L}\p{N}\s.,!?@:;()\-\/&=%_#]/gu) || []).length;
         const totalLength = sanitized.length;
         if (specialCharCount > totalLength * 0.4) {
             return { isValid: false, message: 'Quá nhiều ký tự đặc biệt. Vui lòng dùng ngôn ngữ thông thường.' };
@@ -1024,59 +1025,13 @@
         return div.innerHTML;
     }
 
-    // Helper function to validate HTTP/HTTPS URLs only - more strict validation
-    function isValidHttpUrl(string) {
-        // Basic checks first
-        if (!string || typeof string !== 'string') {
-            return false;
-        }
-
-        // Check length to prevent DoS attacks
-        if (string.length > 2048) {
-            return false;
-        }
-
-        // Check for dangerous patterns in URL BEFORE validation
-        const dangerousPatterns = [
-            /<script/i,
-            /javascript:/i,
-            /data:/i,
-            /vbscript:/i,
-            /on\w+=/i,
-            /%3C/i, // encoded <
-            /%3E/i, // encoded >
-            /%3c/i, // lowercase encoded <
-            /%3e/i, // lowercase encoded >
-        ];
-
-        for (const pattern of dangerousPatterns) {
-            if (pattern.test(string)) {
-                return false;
-            }
-        }
-
-        let url;
-        try {
-            url = new URL(string);
-        } catch (_) {
-            return false;
-        }
-
-        // Only allow http and https protocols - strict comparison
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-            return false;
-        }
-
-        return true;
-    }
-
     // Turns URLs into short domain-label pills. Operates on text that is ALREADY
     // HTML-encoded (never call this with raw/unescaped text).
     function linkifyEncoded(encodedText) {
         // More restrictive URL pattern - only http/https with strict domain format
         // Only matches proper URLs with domain names (requires at least one dot)
         const urlPattern =
-            /\b(https?):\/\/[a-zA-Z0-9][-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&\/=]*/gi;
+            /\b(https?):\/\/[a-zA-Z0-9][-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&;\/=]*/gi;
 
         // Convert URLs to HTML links WITHOUT decoding (prevents encoding bypass)
         return encodedText.replace(urlPattern, function (match) {
