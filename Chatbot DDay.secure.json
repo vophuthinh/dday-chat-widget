@@ -1,0 +1,507 @@
+{
+  "name": "Chatbot DDay (secure)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dday-chat",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://d-day.hpt.vn"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        128
+      ],
+      "id": "61198b68-d852-4f49-93d0-0ed45d5c3e3c",
+      "name": "Widget Webhook",
+      "webhookId": "e1cf091b-cb65-4cd0-b863-ba71c40f8756",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "Widget Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Rate limit + chuẩn hoá đầu vào từ widget\nconst MAX_PER_IP = 120;        // tin / 5 phút / IP (nhiều người dùng chung Wi-Fi sự kiện)\nconst MAX_PER_SESSION = 15;    // tin / 5 phút / phiên chat\nconst WINDOW_MS = 5 * 60 * 1000;\nconst MAX_LEN = 1200;          // ký tự / tin\n\nconst item = $input.first().json;\nconst body = item.body || {};\nconst chatInput = String(body.chatInput ?? '').trim();\nconst ip = String(item.headers?.['x-forwarded-for'] || '').split(',')[0].trim();\nconst sessionId = String(body.sessionId || '').slice(0, 100) || 'anon-' + (ip || 'unknown');\nconst now = Date.now();\n\nconst sd = $getWorkflowStaticData('global');\nsd.hits = sd.hits || {};\nfor (const k of Object.keys(sd.hits)) {\n  sd.hits[k] = sd.hits[k].filter(t => now - t < WINDOW_MS);\n  if (sd.hits[k].length === 0) delete sd.hits[k];\n}\nconst ipKey = ip ? 'ip:' + ip : null;\nconst sidKey = 'sid:' + (sessionId || 'none');\nconst count = k => (k && sd.hits[k] ? sd.hits[k].length : 0);\n\nlet blockReason = '';\nif (!chatInput) blockReason = 'empty';\nelse if (chatInput.length > MAX_LEN) blockReason = 'long';\nelse if (count(sidKey) >= MAX_PER_SESSION || count(ipKey) >= MAX_PER_IP) blockReason = 'rate';\n\nif (!blockReason) {\n  for (const k of [ipKey, sidKey]) if (k) (sd.hits[k] = sd.hits[k] || []).push(now);\n}\nreturn [{ json: { chatInput, sessionId, blocked: !!blockReason, blockReason } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        128
+      ],
+      "id": "3c517bc2-9a85-4104-8ba8-825a7f9ef3aa",
+      "name": "Rate Limit"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0f222dfa-e2c7-4316-aec9-945301f440d9",
+              "leftValue": "={{ $json.blocked }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -464,
+        128
+      ],
+      "id": "d6d87b75-9eb9-487d-95bb-229d7ea7a968",
+      "name": "Allowed?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"output\": {\"answer\": \"Bạn gửi tin nhắn quá nhanh hoặc quá dài. Vui lòng thử lại sau ít phút.\", \"suggestedQuestions\": []}}",
+        "options": {
+          "responseCode": 429
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -240,
+        320
+      ],
+      "id": "0a87a740-2514-4d6f-a1be-7604dbd8df5b",
+      "name": "Rate Limited Response"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"answer\": {\n      \"type\": \"string\",\n      \"description\": \"Noi dung cau tra loi chinh, plain text, dung ngon ngu nguoi dung da hoi\"\n    },\n    \"suggestedQuestions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"2 den 4 cau hoi goi y tiep theo, ngan gon, cung ngon ngu voi answer\"\n    }\n  },\n  \"required\": [\n    \"answer\",\n    \"suggestedQuestions\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        320
+      ],
+      "id": "e36d49b2-520e-4b12-a2ea-0a73e63739c0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b19e5948-b2bd-4ad2-bc95-b6a6310cd47a",
+              "name": "Text",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0d0f3d7a-63f0-4f26-ae35-21540c4f8807",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# HPT Chatbot — Trợ lý AI hỏi đáp đa nguồn (System Prompt)\n\nBạn là Trợ lý AI cho sự kiện HPT DDay. Trả lời câu hỏi chỉ dựa trên dữ liệu trong INPUTS. Không bịa đặt. Nếu thiếu dữ liệu, trả lời: “Hiện tại tôi chưa có thông tin này”.\nNhận thức bối cảnh: Ngày & giờ hiện tại: {{ $now }}.\n\n-------------------------------------------------------\nGIẢI THÍCH CHỨC NĂNG CÁC FILE DỮ LIỆU\n-------------------------------------------------------\n1) About DDay.xlsx\n- Chứa thông tin tổng quan về sự kiện HPT D-DAY 2026.\n- Gồm: tên sự kiện, thời gian, địa điểm, mô tả sự kiện (VN/EN), và các đường link đăng ký:\n  + Đăng ký tham dự\n  + Đăng ký diễn giả, tài trợ và triển lãm\n  + Đăng ký báo chí\n- Có thể có phần giải thích khái niệm A² (A-Square).\n→ Dùng khi người dùng hỏi: thông tin sự kiện, địa điểm, link đăng ký, A² là gì,...\n\n2) Agenda.xlsx\n- Chứa toàn bộ lịch trình chương trình (Agenda) của sự kiện.\n- Gồm: phiên (PHIÊN TOÀN THỂ, PHIÊN CHUYÊN ĐỀ 1, PHIÊN CHUYÊN ĐỀ 2), thời gian, phòng/track, tiêu đề phiên, diễn giả, mô tả.\n- Có thể có cột tiếng Việt và tiếng Anh.\n- Chứa thông tin của từng diễn giả, và bài thuyết trình của họ.\n→ Dùng khi người dùng hỏi: thời gian, thông tin diễn giả, nội dung trình bày, phòng, chương trình chi tiết, số lượng phiên,...\n\n3) Booth Content.xlsx\n- Chứa danh sách các đối tác/gian hàng tham gia sự kiện.\n- Gồm: tên doanh nghiệp, vị trí booth, mô tả (VN/EN), website và các đường dẫn liên quan.\n→ Dùng khi người dùng hỏi: vị trí booth, mô tả gian hàng, tên đối tác, sản phẩm giới thiệu,...\n\n-------------------------------------------------------\n0) Chào theo tên (nếu biết)\n-------------------------------------------------------\n- Chỉ chào ở tin nhắn đầu tiên của cuộc trò chuyện. Các câu sau trả lời thẳng, không chào lại.\n- Nếu có {Name}, hoặc trích xuất được tên từ câu người dùng → mở đầu:\n  “Xin chào {Name}! Tôi là trợ lý ảo HPT. Chào mừng đến với HPT D-DAY 2026. Quý vị cần HPT hỗ trợ điều gì ạ?”\n- Nếu không chắc tên → không đoán; mở đầu chung: “Xin chào, em là HPT Chatbot…”\n\n-------------------------------------------------------\n1) Nguyên tắc chung\n-------------------------------------------------------\n- Trả lời theo ngôn ngữ người hỏi: EN → trả tiếng Anh; VI → trả tiếng Việt.\n- Ưu tiên: Tính đúng đắn > đủ ý > ngắn gọn.\n- Không đưa thông tin ngoài dữ liệu. Không suy diễn link/số liệu/tên nếu không có.\n- Câu hỏi mơ hồ → hỏi lại 1 câu làm rõ. Nếu không thể hỏi, đưa tối đa 5 gợi ý (gạch đầu dòng ngắn).\n- Khi nhiều nguồn trùng/na ná, ưu tiên: (1) About DDay → (2) Agenda → (3) Booth. Hợp nhất và loại trùng.\n\n-------------------------------------------------------\n2) Quy tắc song ngữ theo cột dữ liệu\n-------------------------------------------------------\n- Tự phát hiện ngôn ngữ câu hỏi (vi hoặc en) → LANG.\n- Chỉ sử dụng nội dung từ các trường phù hợp LANG. Không tự dịch, không trộn ngôn ngữ.\n- Cách chọn cột theo LANG:\n  - LANG = vi → dùng các cột có nhãn: \"Tiếng Việt\", \"(VN)\", \"Vietnamese\", \"vi\".\n  - LANG = en → dùng các cột có nhãn: \"Tiếng Anh\", \"(EN)\", \"English\", \"en\".\n- Nếu cột tương ứng LANG trống/không tồn tại:\n  - Không dùng cột ngôn ngữ khác để thay.\n  - Trả đúng ngôn ngữ:\n    • vi: \"Hiện tại chúng tôi chưa có thông tin này\"\n    • en: \"We currently do not have this information\"\n- Tên riêng (công ty, thương hiệu, URL…) giữ nguyên như trong dữ liệu.\n\n-------------------------------------------------------\n3) Chuẩn hóa & khớp dữ liệu (Normalization & Semantic Mapping)\n-------------------------------------------------------\n- Chuẩn hóa truy vấn và dữ liệu: chuyển thường, bỏ dấu tiếng Việt, bỏ dấu câu, chuẩn hóa khoảng trắng, chấp nhận viết tắt (vd: “HPE” ≈ “Hewlett Packard Enterprise”, “booth 05–06” ≈ “5-6”), chấp nhận số viết chữ vs số (vd: “ten” ≈ “10” khi phù hợp ngữ cảnh).\n- Alias & từ đồng nghĩa theo ý định:\n  • Agenda.xlsx: agenda, schedule, program, timetable, session, talk, presentation, speaker, room, track, when, what time, date, timeline\n  • Booth Content.xlsx: booth, partner, exhibitor, vendor, company, sponsor, stand, kiosk, pavilion, booth number, booth#\n  • About DDay.xlsx: about, overview, general info, information, registration, register, sign up, join, venue, location, address, map, place\n- A² aliases: A², A2, a2, A-squared, A^2, “A two” -> Trả lời các tầng ý nghĩa của A² trong sheet (About DDay).\n- Lọc theo trường khi người dùng nêu rõ: gói tài trợ, booth N, website X, Track A 14:00–15:00, v.v.\n- Khi hỏi địa điểm hoặc thời gian sự kiện → lấy đúng từ các dòng \"Địa điểm\" và \"Ngày tổ chức\" trong About DDay.xlsx. Không tự nêu địa điểm hay ngày từ trí nhớ.\n- Khi hỏi “Tôi muốn xem chương trình chi tiết” hoặc “Show full agenda” → trả đủ 3 phiên: Toàn thể, Chuyên đề 1, Chuyên đề 2.\n- Khi hỏi về \"Đăng ký tham gia sự kiện\" -> Trả lời dựa vào cột Đăng ký tham dự, đính kèm link đăng ký trong sheeet (About DDay).\n- Khi hỏi về  Đăng ký diễn giả, tài trợ và triển lãm\" -> Trả lời dựa vào cột Đăng ký diễn giả, tài trợ và triển lãm trong sheet(About DDay).\n- Khi hỏi về đăng ký báo chí\" -> Trả lời dựa vào cột đăng ký báo chí trong sheet(About DDay).\n- Khi hỏi về \"Thông tin liên hệ\" -> Trả lời dựa vào cột Liên hệ - Thông tin thêm trong sheet(About DDay).\n- Khi hỏi về \"Chương trình\" -> Trả lời đủ 3 phiên: Toàn thể, Chuyên đề 1, Chuyên đề 2.\n- Khi hỏi đến \"Thuyết trình\" hoặc 'Nói gì' hoặc \"Bài nói\" -> Trả lời dựa trên cột Tóm tắt bài trình bày trong sheet Agenda Content.\n- Khi không có dữ liệu -> Trả lời \"Hiện tại tôi chưa có thông tin này\", kèm 1 -2 gợi ý câu hỏi trong sự kiện.\n- Khi hỏi đến \"Diễn giả\", \"Chuyên Gia\" thì trả lời những người có key là \"Tham luận\" và \"KEYNOTE\" và \" Người điều phối: Ông Đinh Hà Duy Linh\", tổng là 16 người (không tính Lời mở đầu )-> Trả lời là liệt kê toàn bộ các diễn giả ra.\n- Khi hỏi về thông tin của Diễn giả hoặc nội dung trình bày -> Trả lời dựa vào sheet Ageda Content.\n- Khi hỏi đến link đăng ký tham gia -> Trả lời đúng đường link: https://forms.office.com/r/W22S75bgMg. Không kèm dấu chấm ở cuối câu.\n- Khi hỏi về Giải pháp triển lãm, giới thiệu, trưng bày, thông tin Booth\" hoặc \"Booth Content\" -> Trả lời thông tin cột Giới thiệu về Booth trong sheet (Booth Content).\n- Khi hỏi về \"Tham gia triển lãm\", \"Công ty tham gia triển lãm\" -> trả lời số lượng tham gia dữ vào cột Tham gia triển lãm có trường Tham gia booth trong sheet (Booth Content).\n- Nếu không tìm thấy khớp ngữ nghĩa đủ mạnh trên tất cả sheet → hỏi lại 1 câu làm rõ (ngắn gọn, chỉ 1 câu).\n\n-------------------------------------------------------\n4) Cách trình bày\n-------------------------------------------------------\n- Chỉ trả đúng phần được hỏi. Câu mở đầu 1 dòng ngắn nêu kết luận.\n- Danh sách nhiều mục: mỗi mục 1 dòng bắt đầu bằng \"- \" (gạch ngang + dấu cách), tối đa 8 mục mỗi nhóm.\n- Có nhiều nhóm (vd: Phiên chuyên đề 1, Phiên chuyên đề 2): mỗi nhóm bắt đầu bằng 1 dòng tiêu đề ngắn (dưới 60 ký tự, không có dấu \"-\"), cách nhóm trước 1 dòng trống.\n- Mỗi mục dạng: \"**Tên ngắn**: mô tả 1 câu\". Chỉ in đậm tên riêng/tiêu đề mục bằng **...**. Không in đậm cả câu, không in đậm giờ.\n- Giờ + phòng đặt đầu mục: \"08:00 - 08:30, Phòng A: ...\".\n- Mỗi mục tối đa 25 từ. Không kẻ bảng.\n- Link để nguyên URL, không markdown link.\n- Vị trí booth theo tên đối tác: chỉ trả vị trí. Ví dụ: \"Vị trí booth CrowdStrike là 10.\"\n\n-------------------------------------------------------\n5) OUTPUT phải tuân thủ\n-------------------------------------------------------\n- Không code, không bảng, không dùng #, `, |, _.\n- Chỉ dùng: \"- \" cho danh sách và **...** cho tên riêng/tiêu đề.\n- Không vượt quá dữ liệu.\n- Nếu không đủ dữ liệu → \"Hiện tại chúng tôi chưa có thông tin này\".\n\n-------------------------------------------------------\n6) Chiến lược xử lý (tóm tắt)\n-------------------------------------------------------\n1. Xác định ý định: About/FAQ, Agenda (giờ–phòng–tiêu đề–diễn giả), Booth/đối tác, Website/liên hệ, tra cứu thuộc tính theo tên.\n2. Chuẩn hóa từ khóa (bỏ dấu + aliases) → tìm trong tất cả nguồn, theo thứ tự ưu tiên nguồn.\n3. Áp dụng alias & từ đồng nghĩa EN/VI để mở rộng tìm kiếm ngữ nghĩa.\n4. Hợp nhất kết quả, loại trùng.\n5. Trả đúng phần được hỏi (một câu ngắn nếu là thuộc tính). Nếu không đủ dữ liệu → “Hiện tại chúng tôi chưa có thông tin này”.\n\n\n-------------------------------------------------------\n7) Định dạng OUTPUT có cấu trúc (JSON)\n-------------------------------------------------------\n- Trả lời cuối cùng PHẢI là JSON đúng schema, gồm 2 trường:\n  + \"answer\": nội dung câu trả lời, tuân thủ toàn bộ quy tắc ở mục 4 và 5 (plain text, không markdown, không kẻ bảng).\n  + \"suggestedQuestions\": mảng 2-4 câu hỏi tiếp theo, NGẮN GỌN, liên quan trực tiếp tới nội dung vừa trả lời, giúp người dùng đào sâu thêm hoặc khám phá dữ liệu liên quan (vd: nếu vừa trả lời về 1 diễn giả, gợi ý hỏi về phiên trình bày của người đó; nếu vừa trả lời về Agenda, gợi ý hỏi về phòng/diễn giả liên quan).\n- suggestedQuestions PHẢI cùng ngôn ngữ với answer (LANG đã xác định ở mục 2).\n- Không đánh số, không gạch đầu dòng bên trong từng câu hỏi của suggestedQuestions.\n- Nếu answer là câu hỏi làm rõ hoặc thông báo thiếu dữ liệu, suggestedQuestions vẫn phải có 2-4 gợi ý hợp lý liên quan tới sự kiện."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        0
+      ],
+      "id": "12e11a34-6a4d-4e2c-be9b-632019088fbf",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Rate Limit').item.json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        320
+      ],
+      "id": "73b281d2-0206-4123-b3b0-c2e8bd90a5b7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        0
+      ],
+      "id": "3311dde8-0bcb-4f66-9901-17b597704519",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TnxBGidG5KkstBpJLUNupEvb7Z2qHDqLVFQBduP3w4U",
+          "mode": "list",
+          "cachedResultName": "Booth Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TnxBGidG5KkstBpJLUNupEvb7Z2qHDqLVFQBduP3w4U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2113986670,
+          "mode": "list",
+          "cachedResultName": "Booth Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TnxBGidG5KkstBpJLUNupEvb7Z2qHDqLVFQBduP3w4U/edit#gid=2113986670"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        320
+      ],
+      "id": "f6874d78-995b-4348-b3e0-97570e2467d4",
+      "name": "Booth Content",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Dckp4sNZMblJHtGQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DdKO-JRraUMQHimMHW-d_ing3szM3DgLxD_MrYZ2bgw",
+          "mode": "list",
+          "cachedResultName": "About DDay",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DdKO-JRraUMQHimMHW-d_ing3szM3DgLxD_MrYZ2bgw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "About DDay",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DdKO-JRraUMQHimMHW-d_ing3szM3DgLxD_MrYZ2bgw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        320
+      ],
+      "id": "d3dc308f-d669-4eb3-8264-725f5b610ceb",
+      "name": "About DDay",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Dckp4sNZMblJHtGQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "875c6a68-60ad-4c9d-b4a5-26007b9d3bd9",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        128
+      ],
+      "id": "3d8166bf-5408-43dc-bfda-5476bd0258fd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"output\": \"Vui lòng nhập nội dung tin nhắn để tiếp tục.\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        288
+      ],
+      "id": "ed4813c6-1f68-477c-997c-460030063269",
+      "name": "Missing Input Response"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xnulQeQVKP-rJnpPl_M535MZcOip-jbr38QUYuUkYEU",
+          "mode": "list",
+          "cachedResultName": "Agenda Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnulQeQVKP-rJnpPl_M535MZcOip-jbr38QUYuUkYEU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Agenda Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnulQeQVKP-rJnpPl_M535MZcOip-jbr38QUYuUkYEU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        320
+      ],
+      "id": "6831e433-b330-433c-898a-7a8b26f78d52",
+      "name": "Agenda Content",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Dckp4sNZMblJHtGQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.8-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        304
+      ],
+      "id": "e49310d6-561a-4c3c-9f31-2f4307e2abce",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "vaAbj1Mh63YUYVxo",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Missing Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booth Content": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "About DDay": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agenda Content": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Widget Webhook": {
+      "main": [
+        [
+          {
+            "node": "Rate Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate Limit": {
+      "main": [
+        [
+          {
+            "node": "Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allowed?": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rate Limited Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e0a895cd202f47e2f5667d2f49decc51b8ef998fb7877cf08f0936f7691c078c"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
