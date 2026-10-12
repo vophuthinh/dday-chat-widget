@@ -1528,4 +1528,7 @@
             chatWindow.classList.remove('visible');
         });
     });
+
+    // Auto-open the chat window on every page load
+    chatWindow.classList.add('visible');
 })();
