@@ -1529,6 +1529,9 @@
         });
     });
 
-    // Auto-open the chat window on every page load
-    chatWindow.classList.add('visible');
+    // Auto-open the chat window on every page load, desktop only (matches the
+    // @media (max-width: 520px) breakpoint used for the mobile layout above)
+    if (window.innerWidth > 520) {
+        chatWindow.classList.add('visible');
+    }
 })();
